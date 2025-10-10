@@ -191,3 +191,165 @@ svg {
   cursor: pointer;
   user-select: none;
 }
+
+/* Recipe Detail Page Styles */
+.recipe-detail-icon {
+  font-size: 120px;
+  margin: 20px 0;
+}
+
+.badge.bg-secondary-subtle {
+  background-color: #e2e3e5;
+  padding: 5px 10px;
+  font-weight: 500;
+}
+
+.card-header.bg-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #e8f5e9 !important;
+}
+
+/* Enhanced ingredient display */
+.ingredient-item {
+  transition: all 0.3s ease;
+}
+
+.ingredient-item:hover {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+}
+
+/* Instruction step styling */
+.instruction-step {
+  transition: all 0.3s ease;
+}
+
+.instruction-step:hover {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin: -12px;
+}
+
+/* Smart Recipe Suggestions Styles */
+.alert-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.badge.fs-6 {
+  font-size: 0.875rem !important;
+}
+
+/* Ingredient Search and Selection Styles */
+.ingredient-category {
+  transition: all 0.3s ease;
+}
+
+.form-check {
+  transition: all 0.3s ease;
+}
+
+.form-check:hover {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 4px;
+  margin: -4px;
+}
+
+/* Loading States */
+.spinner-border.text-success {
+  color: #28a745 !important;
+}
+
+/* Match Percentage Badge Colors */
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+/* Enhanced Card Styles */
+.card.border-success {
+  border-color: #28a745 !important;
+}
+
+.card-header.bg-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+/* Quantity Input Styles */
+.ingredient-quantity {
+  transition: all 0.3s ease;
+}
+
+.ingredient-quantity .input-group-sm {
+  max-width: 200px;
+}
+
+.quantity-input {
+  font-size: 0.875rem;
+}
+
+.unit-select {
+  font-size: 0.875rem;
+}
+
+.ingredient-item {
+  transition: all 0.3s ease;
+}
+
+.ingredient-item:hover {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+}
+
+/* Badge Styles for Quantity Analysis */
+.badge.bg-warning-subtle {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge.bg-info-subtle {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Enhanced Alert Styles */
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+}
+
+/* Responsive Quantity Inputs */
+@media (max-width: 768px) {
+  .ingredient-quantity .input-group-sm {
+    max-width: 150px;
+  }
+  
+  .quantity-input,
+  .unit-select {
+    font-size: 0.8rem;
+  }
+}
