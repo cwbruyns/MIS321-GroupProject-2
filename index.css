@@ -1,0 +1,167 @@
+body {
+  background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  color: #2d5016;
+}
+
+/* Navbar Styles */
+.navbar {
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(40, 167, 69, 0.1);
+}
+
+.navbar-brand {
+  color: #28a745 !important;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+}
+
+.btn-outline-success {
+  border-color: #28a745;
+  color: #28a745;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-success:hover {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Logo Styles */
+.logo-circle {
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 40px rgba(40, 167, 69, 0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+.logo-icon {
+  font-size: 90px;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-secondary {
+  color: #5a6c57 !important;
+}
+
+/* Button Styles */
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+.btn-success:active {
+  transform: translateY(-1px);
+}
+
+.btn-outline-success.btn-lg {
+  border: 2px solid #28a745;
+  color: #28a745;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background-color: white;
+}
+
+.btn-outline-success.btn-lg:hover {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+/* Shadow utilities */
+.shadow {
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2) !important;
+}
+
+/* SVG alignment fix */
+svg {
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* Recipe Cards */
+.recipe-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(40, 167, 69, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.recipe-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(40, 167, 69, 0.2) !important;
+  border-color: rgba(40, 167, 69, 0.3);
+}
+
+.recipe-icon {
+  font-size: 60px;
+  margin: 20px 0;
+}
+
+.filter-btn {
+  transition: all 0.3s ease;
+}
+
+.filter-btn.active {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.filter-btn:not(.active):hover {
+  background-color: #e8f5e9;
+  border-color: #28a745;
+}
+
+.badge.bg-success-subtle {
+  background-color: #d4edda;
+  padding: 5px 10px;
+  font-weight: 500;
+}
