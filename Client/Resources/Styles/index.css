@@ -351,6 +351,86 @@ svg {
   color: #856404;
 }
 
+/* Password Toggle Button Styles */
+.input-group .btn-outline-secondary {
+  border-left: 0;
+  border-color: #ced4da;
+  transition: all 0.3s ease;
+}
+
+.input-group .btn-outline-secondary:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+  color: #495057;
+}
+
+.input-group .btn-outline-secondary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25);
+}
+
+.input-group .form-control:focus + .btn-outline-secondary {
+  border-color: #86b7fe;
+}
+
+/* Authentication Modal Styles */
+#authModal .modal-content {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+#authModal .modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15px 15px 0 0;
+  padding: 2rem 1.5rem 1rem;
+}
+
+#authModal .modal-body {
+  padding: 1.5rem;
+}
+
+#authModal .form-control {
+  border-radius: 0.5rem;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  padding: 0.75rem 1rem;
+}
+
+#authModal .form-control:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.15);
+}
+
+#authModal .btn-success {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+}
+
+#authModal .logo-circle {
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+}
+
+#authModal .text-success {
+  color: #28a745 !important;
+}
+
+#authModal .text-success:hover {
+  color: #218838 !important;
+  text-decoration: underline !important;
+}
+
+/* Modal Animation */
+.modal.fade .modal-dialog {
+  transform: translate(0, -50px);
+  transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  transform: translate(0, 0);
+}
+
 /* Responsive Quantity Inputs */
 @media (max-width: 768px) {
   .ingredient-quantity .input-group-sm {

@@ -103,11 +103,19 @@ function renderHomePage() {
   });
   
   document.getElementById('shoppingListBtn').addEventListener('click', () => {
-    renderShoppingListPage();
+    if (isLoggedIn) {
+      renderShoppingListPage();
+    } else {
+      showAuthModal('shoppingList');
+    }
   });
   
   document.getElementById('healthGoalsBtn').addEventListener('click', () => {
-    renderHealthGoalsPage();
+    if (isLoggedIn) {
+      renderHealthGoalsPage();
+    } else {
+      showAuthModal('healthGoals');
+    }
   });
 }
 
@@ -506,6 +514,310 @@ async function generateRecipeCards(filter = 'all', searchQuery = '') {
 
 // API Configuration
 const API_BASE_URL = 'https://localhost:7000/api'; // Update this to match your API URL
+
+// Authentication state
+let currentUser = null;
+let isLoggedIn = false;
+
+// User management functions
+function saveUser(user) {
+  localStorage.setItem('currentUser', JSON.stringify(user));
+  currentUser = user;
+  isLoggedIn = true;
+}
+
+function loadUser() {
+  const user = localStorage.getItem('currentUser');
+  if (user) {
+    currentUser = JSON.parse(user);
+    isLoggedIn = true;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('currentUser');
+  currentUser = null;
+  isLoggedIn = false;
+  renderHomePage();
+  showNotification('Logged out successfully', 'info');
+}
+
+function getUsers() {
+  const users = localStorage.getItem('users');
+  return users ? JSON.parse(users) : [];
+}
+
+function saveUsers(users) {
+  localStorage.setItem('users', JSON.stringify(users));
+}
+
+function registerUser(username, email, password) {
+  const users = getUsers();
+  
+  // Check if user already exists
+  if (users.find(u => u.username === username || u.email === email)) {
+    return { success: false, message: 'Username or email already exists' };
+  }
+  
+  // Create new user
+  const newUser = {
+    id: Date.now(),
+    username,
+    email,
+    password, // In a real app, this would be hashed
+    createdAt: new Date().toISOString()
+  };
+  
+  users.push(newUser);
+  saveUsers(users);
+  saveUser(newUser);
+  
+  return { success: true, message: 'Account created successfully' };
+}
+
+function loginUser(username, password) {
+  const users = getUsers();
+  const user = users.find(u => (u.username === username || u.email === username) && u.password === password);
+  
+  if (user) {
+    saveUser(user);
+    return { success: true, message: 'Login successful' };
+  } else {
+    return { success: false, message: 'Invalid username or password' };
+  }
+}
+
+// Authentication Modal functions
+let currentAuthAction = null;
+
+function showAuthModal(action) {
+  currentAuthAction = action;
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title text-center w-100" id="authModalLabel">
+              <div class="logo-circle mx-auto mb-3" style="width: 60px; height: 60px;">
+                <span class="logo-icon" style="font-size: 30px;">🍽️</span>
+              </div>
+              <span class="fw-bold text-success">Sign In Required</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body px-4 pb-4">
+            <p class="text-muted text-center mb-4">
+              Please sign in to access ${action === 'shoppingList' ? 'your shopping list' : 'health goals and tracking'}.
+            </p>
+            
+            <!-- Login Form -->
+            <div id="loginSection">
+              <form id="modalLoginForm">
+                <div class="mb-3">
+                  <label for="modalLoginUsername" class="form-label">Username or Email</label>
+                  <input type="text" class="form-control" id="modalLoginUsername" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="modalLoginPassword" class="form-label">Password</label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="modalLoginPassword" required>
+                    <button class="btn btn-outline-secondary" type="button" id="toggleModalLoginPassword">
+                      <i class="fas fa-eye" id="modalLoginPasswordIcon"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success w-100 mb-3">Sign In</button>
+              </form>
+              
+              <div class="text-center">
+                <p class="text-muted">Don't have an account? 
+                  <a href="#" id="showModalRegister" class="text-success text-decoration-none fw-semibold">Sign up</a>
+                </p>
+              </div>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerSection" style="display: none;">
+              <form id="modalRegisterForm">
+                <div class="mb-3">
+                  <label for="modalRegisterUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="modalRegisterUsername" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="modalRegisterEmail" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="modalRegisterEmail" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="modalRegisterPassword" class="form-label">Password</label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="modalRegisterPassword" required>
+                    <button class="btn btn-outline-secondary" type="button" id="toggleModalRegisterPassword">
+                      <i class="fas fa-eye" id="modalRegisterPasswordIcon"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="modalConfirmPassword" class="form-label">Confirm Password</label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="modalConfirmPassword" required>
+                    <button class="btn btn-outline-secondary" type="button" id="toggleModalConfirmPassword">
+                      <i class="fas fa-eye" id="modalConfirmPasswordIcon"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success w-100 mb-3">Create Account</button>
+              </form>
+              
+              <div class="text-center">
+                <p class="text-muted">Already have an account? 
+                  <a href="#" id="showModalLogin" class="text-success text-decoration-none fw-semibold">Sign in</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing modal if any
+  const existingModal = document.getElementById('authModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('authModal'));
+  modal.show();
+  
+  // Add event listeners
+  setupModalEventListeners();
+}
+
+function setupModalEventListeners() {
+  // Toggle between login and register
+  document.getElementById('showModalRegister').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('registerSection').style.display = 'block';
+  });
+  
+  document.getElementById('showModalLogin').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('loginSection').style.display = 'block';
+  });
+  
+  // Password visibility toggles
+  document.getElementById('toggleModalLoginPassword').addEventListener('click', () => {
+    togglePasswordVisibility('modalLoginPassword', 'modalLoginPasswordIcon');
+  });
+  
+  document.getElementById('toggleModalRegisterPassword').addEventListener('click', () => {
+    togglePasswordVisibility('modalRegisterPassword', 'modalRegisterPasswordIcon');
+  });
+  
+  document.getElementById('toggleModalConfirmPassword').addEventListener('click', () => {
+    togglePasswordVisibility('modalConfirmPassword', 'modalConfirmPasswordIcon');
+  });
+  
+  // Form submissions
+  document.getElementById('modalLoginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleModalLogin();
+  });
+  
+  document.getElementById('modalRegisterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleModalRegister();
+  });
+  
+  // Close modal when clicking outside
+  document.getElementById('authModal').addEventListener('hidden.bs.modal', () => {
+    document.getElementById('authModal').remove();
+  });
+}
+
+function handleModalLogin() {
+  const username = document.getElementById('modalLoginUsername').value;
+  const password = document.getElementById('modalLoginPassword').value;
+  
+  const result = loginUser(username, password);
+  
+  if (result.success) {
+    showNotification(result.message, 'success');
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+    modal.hide();
+    // Redirect to the intended page
+    if (currentAuthAction === 'shoppingList') {
+      renderShoppingListPage();
+    } else if (currentAuthAction === 'healthGoals') {
+      renderHealthGoalsPage();
+    }
+  } else {
+    showNotification(result.message, 'danger');
+  }
+}
+
+function handleModalRegister() {
+  const username = document.getElementById('modalRegisterUsername').value;
+  const email = document.getElementById('modalRegisterEmail').value;
+  const password = document.getElementById('modalRegisterPassword').value;
+  const confirmPassword = document.getElementById('modalConfirmPassword').value;
+  
+  if (password !== confirmPassword) {
+    showNotification('Passwords do not match', 'danger');
+    return;
+  }
+  
+  if (password.length < 6) {
+    showNotification('Password must be at least 6 characters', 'danger');
+    return;
+  }
+  
+  const result = registerUser(username, email, password);
+  
+  if (result.success) {
+    showNotification(result.message, 'success');
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+    modal.hide();
+    // Redirect to the intended page
+    if (currentAuthAction === 'shoppingList') {
+      renderShoppingListPage();
+    } else if (currentAuthAction === 'healthGoals') {
+      renderHealthGoalsPage();
+    }
+  } else {
+    showNotification(result.message, 'danger');
+  }
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+
 
 // API Functions
 async function fetchRecipes() {
@@ -1959,15 +2271,15 @@ function generateShoppingListByStore() {
                       <small class="text-info">
                         <strong>For:</strong> ${ingredient.recipes.join(', ')}
                       </small>
-                    </div>
+                  </div>
                     <div class="mt-2">
                       <small class="text-success">
                         <strong>Available at:</strong> ${ingredient.stores ? ingredient.stores.join(', ') : 'Various stores'}
                       </small>
                     </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                    </div>
             `).join('')}
                   </div>
                     </div>
@@ -3127,5 +3439,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+  // Load user authentication state
+  loadUser();
   renderHomePage();
 });
