@@ -85,6 +85,15 @@ body {
   overflow: hidden;
 }
 
+/* Main action buttons - consistent sizing */
+#findRecipesBtn,
+#makeRecipeBtn,
+#shoppingListBtn,
+#healthGoalsBtn {
+  min-width: 200px;
+  width: 200px;
+}
+
 .btn-success:hover {
   background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
   transform: translateY(-3px);
