@@ -1467,12 +1467,18 @@ function renderRecipeDetailPage(recipe) {
               <ul class="list-unstyled mb-0">
                 ${recipe.ingredients.map(ingredient => {
                   const substitutions = getIngredientSubstitutions(ingredient.name);
+                  const storeInfo = getStoreLocation(ingredient.name);
                   return `
                   <li class="mb-4 pb-3 border-bottom">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                       <div class="flex-grow-1">
                         <strong class="text-success">${ingredient.name}</strong>
                         ${ingredient.notes ? `<br><small class="text-muted">${ingredient.notes}</small>` : ''}
+                        <div class="mt-1">
+                          <small class="text-info">
+                            <strong>Available at:</strong> ${storeInfo.stores.join(', ')}
+                          </small>
+                        </div>
                     </div>
                       <div class="text-end">
                         <span class="fw-bold">${ingredient.amount}</span>
@@ -1649,6 +1655,7 @@ function generateShoppingList(recipes) {
         // Simple quantity aggregation (could be enhanced with proper unit conversion)
         existing.totalAmount = (parseFloat(existing.amount) + parseFloat(ingredient.amount)).toString();
       } else {
+        const storeInfo = getStoreLocation(ingredient.name);
         ingredientMap.set(key, {
           name: ingredient.name,
           amount: ingredient.amount,
@@ -1656,7 +1663,8 @@ function generateShoppingList(recipes) {
           notes: ingredient.notes,
           recipes: [recipe.title],
           totalAmount: ingredient.amount,
-          storeLocation: getStoreLocation(ingredient.name)
+          storeLocation: storeInfo.section,
+          stores: storeInfo.stores
         });
       }
     });
@@ -1669,74 +1677,95 @@ function generateShoppingList(recipes) {
 function getStoreLocation(ingredientName) {
   const storeMappings = {
     // Produce Section
-    'avocado': 'Produce',
-    'tomato': 'Produce',
-    'lettuce': 'Produce',
-    'spinach': 'Produce',
-    'broccoli': 'Produce',
-    'carrot': 'Produce',
-    'bell-pepper': 'Produce',
-    'onion': 'Produce',
-    'garlic': 'Produce',
-    'ginger': 'Produce',
-    'cucumber': 'Produce',
-    'zucchini': 'Produce',
-    'mushroom': 'Produce',
-    'cauliflower': 'Produce',
-    'kale': 'Produce',
-    'green-beans': 'Produce',
-    'asparagus': 'Produce',
-    'eggplant': 'Produce',
-    'sweet-potato': 'Produce',
-    'potato': 'Produce',
-    'berries': 'Produce',
-    'basil': 'Produce',
-    'oregano': 'Produce',
-    'thyme': 'Produce',
-    'rosemary': 'Produce',
-    'cilantro': 'Produce',
-    'parsley': 'Produce',
+    'avocado': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'tomato': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cherry tomatoes': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'lettuce': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'spinach': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'broccoli': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'carrot': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'carrots': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'bell pepper': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'red bell pepper': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'onion': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'red onion': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'garlic': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'ginger': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cucumber': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'zucchini': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'mushroom': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cauliflower': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'kale': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'green-beans': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'asparagus': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'eggplant': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'sweet potato': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'sweet-potato': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'potato': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'berries': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'mixed berries': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'banana': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'lemon': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'basil': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'oregano': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'thyme': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'rosemary': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cilantro': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'parsley': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'dill': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cabbage': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'red cabbage': { section: 'Produce', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
     
     // Meat & Seafood
-    'chicken': 'Meat & Seafood',
-    'salmon': 'Meat & Seafood',
-    'beef': 'Meat & Seafood',
-    'turkey': 'Meat & Seafood',
-    'pork': 'Meat & Seafood',
-    'shrimp': 'Meat & Seafood',
+    'chicken': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'salmon': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'salmon fillets': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'beef': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'turkey': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'pork': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'shrimp': { section: 'Meat & Seafood', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
     
     // Dairy
-    'eggs': 'Dairy',
-    'yogurt': 'Dairy',
-    'cheese': 'Dairy',
-    'milk': 'Dairy',
-    'butter': 'Dairy',
+    'eggs': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'yogurt': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'greek yogurt': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cheese': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'milk': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'almond milk': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'butter': { section: 'Dairy', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
     
     // Pantry/Dry Goods
-    'quinoa': 'Pantry',
-    'rice': 'Pantry',
-    'pasta': 'Pantry',
-    'oats': 'Pantry',
-    'chickpeas': 'Pantry',
-    'lentils': 'Pantry',
-    'black-beans': 'Pantry',
-    'tofu': 'Pantry',
-    'nuts': 'Pantry',
-    'olive oil': 'Pantry',
-    'salt': 'Pantry',
-    'pepper': 'Pantry',
-    'cumin': 'Pantry',
-    'paprika': 'Pantry'
+    'quinoa': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'rice': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'pasta': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'oats': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'chickpeas': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'lentils': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'black-beans': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'tofu': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'nuts': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'olive oil': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'salt': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'pepper': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'black pepper': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'cumin': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'paprika': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'bread': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'whole grain bread': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'tahini': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'honey': { section: 'Pantry', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] },
+    'chia seeds': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] },
+    'protein powder': { section: 'Pantry', stores: ['Whole Foods', 'Kroger', 'Walmart', 'Safeway'] }
   };
   
   const lowerName = ingredientName.toLowerCase();
-  for (const [key, location] of Object.entries(storeMappings)) {
+  for (const [key, storeInfo] of Object.entries(storeMappings)) {
     if (lowerName.includes(key)) {
-      return location;
+      return storeInfo;
     }
   }
   
-  return 'General'; // Default location
+  return { section: 'General', stores: ['Walmart', 'Kroger', 'Whole Foods', 'Safeway'] }; // Default location
 }
 
 // Show notification
@@ -1930,10 +1959,15 @@ function generateShoppingListByStore() {
                       <small class="text-info">
                         <strong>For:</strong> ${ingredient.recipes.join(', ')}
                       </small>
-                  </div>
+                    </div>
+                    <div class="mt-2">
+                      <small class="text-success">
+                        <strong>Available at:</strong> ${ingredient.stores ? ingredient.stores.join(', ') : 'Various stores'}
+                      </small>
                     </div>
                   </div>
-                    </div>
+                </div>
+              </div>
             `).join('')}
                   </div>
                     </div>
