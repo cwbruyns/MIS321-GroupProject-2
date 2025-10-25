@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using API.Models;
+using API.Data;
 
 namespace API.Controllers
 {
@@ -8,48 +10,199 @@ namespace API.Controllers
     public class RecipeController : ControllerBase
     {
         private readonly ILogger<RecipeController> _logger;
+        private readonly RecipeDbContext _context;
 
-        public RecipeController(ILogger<RecipeController> logger)
+        public RecipeController(ILogger<RecipeController> logger, RecipeDbContext context)
         {
             _logger = logger;
+            _context = context;
+        }
+
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "API is working!", timestamp = DateTime.Now });
+        }
+
+        [HttpGet("test-db")]
+        public async Task<IActionResult> TestDatabase()
+        {
+            try
+            {
+                // Test database connection
+                var canConnect = await _context.Database.CanConnectAsync();
+                
+                if (!canConnect)
+                {
+                    return StatusCode(500, new { 
+                        error = "Cannot connect to database",
+                        timestamp = DateTime.Now 
+                    });
+                }
+
+                // Test if tables exist and have data
+                var recipeCount = await _context.Recipes.CountAsync();
+                var ingredientCount = await _context.Ingredients.CountAsync();
+                
+                return Ok(new {
+                    message = "Database connection successful!",
+                    canConnect = canConnect,
+                    recipeCount = recipeCount,
+                    ingredientCount = ingredientCount,
+                    timestamp = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Database connection test failed");
+                return StatusCode(500, new { 
+                    error = ex.Message,
+                    timestamp = DateTime.Now 
+                });
+            }
+        }
+
+        [HttpGet("init-db")]
+        public async Task<IActionResult> InitializeDatabase()
+        {
+            try
+            {
+                // Ensure database is created
+                await _context.Database.EnsureCreatedAsync();
+                
+                // Check if we have data
+                var recipeCount = await _context.Recipes.CountAsync();
+                
+                if (recipeCount == 0)
+                {
+                    await SeedDatabaseAsync();
+                    recipeCount = await _context.Recipes.CountAsync();
+                }
+                
+                return Ok(new { 
+                    message = "Database initialized successfully!", 
+                    recipeCount = recipeCount,
+                    timestamp = DateTime.Now 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing database");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("reset-db")]
+        public async Task<IActionResult> ResetDatabase()
+        {
+            try
+            {
+                // Clear existing data and reseed with new recipes
+                await SeedDatabaseAsync();
+                
+                var recipeCount = await _context.Recipes.CountAsync();
+                
+                return Ok(new { 
+                    message = "Database reset successfully with new recipes!", 
+                    recipeCount = recipeCount,
+                    timestamp = DateTime.Now 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting database");
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         [HttpGet]
-        public IEnumerable<Recipe> GetRecipes()
+        public async Task<IEnumerable<Recipe>> GetRecipes()
         {
-            return GetSampleRecipes();
+            try
+            {
+                // Check if database has data, if not seed it
+                if (!_context.Recipes.Any())
+                {
+                    await SeedDatabaseAsync();
+                }
+                
+                return await _context.Recipes
+                    .Include(r => r.Ingredients)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching recipes from database");
+                // Return empty list instead of fallback to ensure database is used
+                return new List<Recipe>();
+            }
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Recipe> GetRecipe(int id)
+        public async Task<ActionResult<Recipe>> GetRecipe(int id)
         {
-            var recipe = GetSampleRecipes().FirstOrDefault(r => r.Id == id);
+            try
+            {
+                var recipe = await _context.Recipes
+                    .Include(r => r.Ingredients)
+                    .FirstOrDefaultAsync(r => r.Id == id);
+                
             if (recipe == null)
             {
                 return NotFound();
             }
             return recipe;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching recipe {Id}", id);
+                return StatusCode(500, new { error = "Database error occurred" });
+            }
         }
 
         [HttpGet("category/{category}")]
-        public IEnumerable<Recipe> GetRecipesByCategory(string category)
+        public async Task<IEnumerable<Recipe>> GetRecipesByCategory(string category)
         {
-            return GetSampleRecipes().Where(r => r.Category.ToLower() == category.ToLower());
+            try
+            {
+                return await _context.Recipes
+                    .Include(r => r.Ingredients)
+                    .Where(r => r.Category.ToLower() == category.ToLower())
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching recipes by category {Category}", category);
+                return new List<Recipe>();
+            }
         }
 
         [HttpGet("search")]
-        public IEnumerable<Recipe> SearchRecipes([FromQuery] string query)
+        public async Task<IEnumerable<Recipe>> SearchRecipes([FromQuery] string query)
+        {
+            try
         {
             if (string.IsNullOrEmpty(query))
-                return GetSampleRecipes();
+                    return await _context.Recipes
+                        .Include(r => r.Ingredients)
+                        .ToListAsync();
 
             var lowerQuery = query.ToLower();
-            return GetSampleRecipes().Where(r => 
+                return await _context.Recipes
+                    .Include(r => r.Ingredients)
+                    .Where(r => 
                 r.Title.ToLower().Contains(lowerQuery) ||
                 r.Description.ToLower().Contains(lowerQuery) ||
                 r.Tags.Any(t => t.ToLower().Contains(lowerQuery)) ||
                 r.Ingredients.Any(i => i.Name.ToLower().Contains(lowerQuery))
-            );
+                    )
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching recipes with query {Query}", query);
+                return new List<Recipe>();
+            }
         }
 
         private List<Recipe> GetSampleRecipes()
@@ -71,13 +224,13 @@ namespace API.Controllers
                     Difficulty = "Easy",
                     Ingredients = new List<Ingredient>
                     {
-                        new Ingredient { Id = 1, Name = "Avocado", Amount = "1", Unit = "medium", Notes = "ripe" },
-                        new Ingredient { Id = 2, Name = "Eggs", Amount = "2", Unit = "large", Notes = "free-range" },
-                        new Ingredient { Id = 3, Name = "Cherry tomatoes", Amount = "1/2", Unit = "cup", Notes = "halved" },
-                        new Ingredient { Id = 4, Name = "Whole grain bread", Amount = "2", Unit = "slices", Notes = "toasted" },
-                        new Ingredient { Id = 5, Name = "Olive oil", Amount = "1", Unit = "tbsp", Notes = "extra virgin" },
-                        new Ingredient { Id = 6, Name = "Salt", Amount = "1/4", Unit = "tsp", Notes = "to taste" },
-                        new Ingredient { Id = 7, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground" }
+                        new Ingredient { Id = 1, Name = "Avocado", Amount = "1", Unit = "medium", Notes = "ripe", RecipeId = 1 },
+                        new Ingredient { Id = 2, Name = "Eggs", Amount = "2", Unit = "large", Notes = "free-range", RecipeId = 1 },
+                        new Ingredient { Id = 3, Name = "Cherry tomatoes", Amount = "1/2", Unit = "cup", Notes = "halved", RecipeId = 1 },
+                        new Ingredient { Id = 4, Name = "Whole grain bread", Amount = "2", Unit = "slices", Notes = "toasted", RecipeId = 1 },
+                        new Ingredient { Id = 5, Name = "Olive oil", Amount = "1", Unit = "tbsp", Notes = "extra virgin", RecipeId = 1 },
+                        new Ingredient { Id = 6, Name = "Salt", Amount = "1/4", Unit = "tsp", Notes = "to taste", RecipeId = 1 },
+                        new Ingredient { Id = 7, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground", RecipeId = 1 }
                     },
                     Instructions = new List<string>
                     {
@@ -106,16 +259,16 @@ namespace API.Controllers
                     Difficulty = "Easy",
                     Ingredients = new List<Ingredient>
                     {
-                        new Ingredient { Id = 8, Name = "Quinoa", Amount = "1", Unit = "cup", Notes = "uncooked" },
-                        new Ingredient { Id = 9, Name = "Baby spinach", Amount = "2", Unit = "cups", Notes = "fresh" },
-                        new Ingredient { Id = 10, Name = "Cherry tomatoes", Amount = "1", Unit = "cup", Notes = "halved" },
-                        new Ingredient { Id = 11, Name = "Cucumber", Amount = "1", Unit = "medium", Notes = "diced" },
-                        new Ingredient { Id = 12, Name = "Red bell pepper", Amount = "1", Unit = "medium", Notes = "diced" },
-                        new Ingredient { Id = 13, Name = "Red onion", Amount = "1/4", Unit = "cup", Notes = "thinly sliced" },
-                        new Ingredient { Id = 14, Name = "Lemon juice", Amount = "2", Unit = "tbsp", Notes = "fresh" },
-                        new Ingredient { Id = 15, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "extra virgin" },
-                        new Ingredient { Id = 16, Name = "Salt", Amount = "1/2", Unit = "tsp", Notes = "to taste" },
-                        new Ingredient { Id = 17, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground" }
+                        new Ingredient { Id = 8, Name = "Quinoa", Amount = "1", Unit = "cup", Notes = "uncooked", RecipeId = 2 },
+                        new Ingredient { Id = 9, Name = "Baby spinach", Amount = "2", Unit = "cups", Notes = "fresh", RecipeId = 2 },
+                        new Ingredient { Id = 10, Name = "Cherry tomatoes", Amount = "1", Unit = "cup", Notes = "halved", RecipeId = 2 },
+                        new Ingredient { Id = 11, Name = "Cucumber", Amount = "1", Unit = "medium", Notes = "diced", RecipeId = 2 },
+                        new Ingredient { Id = 12, Name = "Red bell pepper", Amount = "1", Unit = "medium", Notes = "diced", RecipeId = 2 },
+                        new Ingredient { Id = 13, Name = "Red onion", Amount = "1/4", Unit = "cup", Notes = "thinly sliced", RecipeId = 2 },
+                        new Ingredient { Id = 14, Name = "Lemon juice", Amount = "2", Unit = "tbsp", Notes = "fresh", RecipeId = 2 },
+                        new Ingredient { Id = 15, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "extra virgin", RecipeId = 2 },
+                        new Ingredient { Id = 16, Name = "Salt", Amount = "1/2", Unit = "tsp", Notes = "to taste", RecipeId = 2 },
+                        new Ingredient { Id = 17, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground", RecipeId = 2 }
                     },
                     Instructions = new List<string>
                     {
@@ -144,16 +297,16 @@ namespace API.Controllers
                     Difficulty = "Medium",
                     Ingredients = new List<Ingredient>
                     {
-                        new Ingredient { Id = 18, Name = "Salmon fillets", Amount = "2", Unit = "6-oz", Notes = "skin-on" },
-                        new Ingredient { Id = 19, Name = "Broccoli", Amount = "1", Unit = "head", Notes = "cut into florets" },
-                        new Ingredient { Id = 20, Name = "Carrots", Amount = "2", Unit = "medium", Notes = "cut into sticks" },
-                        new Ingredient { Id = 21, Name = "Zucchini", Amount = "1", Unit = "medium", Notes = "sliced" },
-                        new Ingredient { Id = 22, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "divided" },
-                        new Ingredient { Id = 23, Name = "Garlic", Amount = "2", Unit = "cloves", Notes = "minced" },
-                        new Ingredient { Id = 24, Name = "Lemon", Amount = "1", Unit = "medium", Notes = "juiced" },
-                        new Ingredient { Id = 25, Name = "Dill", Amount = "2", Unit = "tbsp", Notes = "fresh, chopped" },
-                        new Ingredient { Id = 26, Name = "Salt", Amount = "1", Unit = "tsp", Notes = "divided" },
-                        new Ingredient { Id = 27, Name = "Black pepper", Amount = "1/2", Unit = "tsp", Notes = "freshly ground" }
+                        new Ingredient { Id = 18, Name = "Salmon fillets", Amount = "2", Unit = "6-oz", Notes = "skin-on", RecipeId = 3 },
+                        new Ingredient { Id = 19, Name = "Broccoli", Amount = "1", Unit = "head", Notes = "cut into florets", RecipeId = 3 },
+                        new Ingredient { Id = 20, Name = "Carrots", Amount = "2", Unit = "medium", Notes = "cut into sticks", RecipeId = 3 },
+                        new Ingredient { Id = 21, Name = "Zucchini", Amount = "1", Unit = "medium", Notes = "sliced", RecipeId = 3 },
+                        new Ingredient { Id = 22, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "divided", RecipeId = 3 },
+                        new Ingredient { Id = 23, Name = "Garlic", Amount = "2", Unit = "cloves", Notes = "minced", RecipeId = 3 },
+                        new Ingredient { Id = 24, Name = "Lemon", Amount = "1", Unit = "medium", Notes = "juiced", RecipeId = 3 },
+                        new Ingredient { Id = 25, Name = "Dill", Amount = "2", Unit = "tbsp", Notes = "fresh, chopped", RecipeId = 3 },
+                        new Ingredient { Id = 26, Name = "Salt", Amount = "1", Unit = "tsp", Notes = "divided", RecipeId = 3 },
+                        new Ingredient { Id = 27, Name = "Black pepper", Amount = "1/2", Unit = "tsp", Notes = "freshly ground", RecipeId = 3 }
                     },
                     Instructions = new List<string>
                     {
@@ -183,13 +336,13 @@ namespace API.Controllers
                     Difficulty = "Easy",
                     Ingredients = new List<Ingredient>
                     {
-                        new Ingredient { Id = 28, Name = "Mixed berries", Amount = "1", Unit = "cup", Notes = "frozen" },
-                        new Ingredient { Id = 29, Name = "Greek yogurt", Amount = "1/2", Unit = "cup", Notes = "plain, non-fat" },
-                        new Ingredient { Id = 30, Name = "Banana", Amount = "1/2", Unit = "medium", Notes = "frozen" },
-                        new Ingredient { Id = 31, Name = "Almond milk", Amount = "1/2", Unit = "cup", Notes = "unsweetened" },
-                        new Ingredient { Id = 32, Name = "Protein powder", Amount = "1", Unit = "scoop", Notes = "vanilla" },
-                        new Ingredient { Id = 33, Name = "Honey", Amount = "1", Unit = "tbsp", Notes = "optional" },
-                        new Ingredient { Id = 34, Name = "Chia seeds", Amount = "1", Unit = "tsp", Notes = "optional" }
+                        new Ingredient { Id = 28, Name = "Mixed berries", Amount = "1", Unit = "cup", Notes = "frozen", RecipeId = 4 },
+                        new Ingredient { Id = 29, Name = "Greek yogurt", Amount = "1/2", Unit = "cup", Notes = "plain, non-fat", RecipeId = 4 },
+                        new Ingredient { Id = 30, Name = "Banana", Amount = "1/2", Unit = "medium", Notes = "frozen", RecipeId = 4 },
+                        new Ingredient { Id = 31, Name = "Almond milk", Amount = "1/2", Unit = "cup", Notes = "unsweetened", RecipeId = 4 },
+                        new Ingredient { Id = 32, Name = "Protein powder", Amount = "1", Unit = "scoop", Notes = "vanilla", RecipeId = 4 },
+                        new Ingredient { Id = 33, Name = "Honey", Amount = "1", Unit = "tbsp", Notes = "optional", RecipeId = 4 },
+                        new Ingredient { Id = 34, Name = "Chia seeds", Amount = "1", Unit = "tsp", Notes = "optional", RecipeId = 4 }
                     },
                     Instructions = new List<string>
                     {
@@ -217,17 +370,17 @@ namespace API.Controllers
                     Difficulty = "Medium",
                     Ingredients = new List<Ingredient>
                     {
-                        new Ingredient { Id = 35, Name = "Chickpeas", Amount = "1", Unit = "can", Notes = "15 oz, drained and rinsed" },
-                        new Ingredient { Id = 36, Name = "Quinoa", Amount = "1", Unit = "cup", Notes = "uncooked" },
-                        new Ingredient { Id = 37, Name = "Sweet potato", Amount = "1", Unit = "large", Notes = "cubed" },
-                        new Ingredient { Id = 38, Name = "Kale", Amount = "2", Unit = "cups", Notes = "chopped" },
-                        new Ingredient { Id = 39, Name = "Red cabbage", Amount = "1", Unit = "cup", Notes = "shredded" },
-                        new Ingredient { Id = 40, Name = "Tahini", Amount = "2", Unit = "tbsp", Notes = "raw" },
-                        new Ingredient { Id = 41, Name = "Lemon juice", Amount = "2", Unit = "tbsp", Notes = "fresh" },
-                        new Ingredient { Id = 42, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "divided" },
-                        new Ingredient { Id = 43, Name = "Cumin", Amount = "1", Unit = "tsp", Notes = "ground" },
-                        new Ingredient { Id = 44, Name = "Salt", Amount = "1", Unit = "tsp", Notes = "divided" },
-                        new Ingredient { Id = 45, Name = "Black pepper", Amount = "1/2", Unit = "tsp", Notes = "freshly ground" }
+                        new Ingredient { Id = 35, Name = "Chickpeas", Amount = "1", Unit = "can", Notes = "15 oz, drained and rinsed", RecipeId = 5 },
+                        new Ingredient { Id = 36, Name = "Quinoa", Amount = "1", Unit = "cup", Notes = "uncooked", RecipeId = 5 },
+                        new Ingredient { Id = 37, Name = "Sweet potato", Amount = "1", Unit = "large", Notes = "cubed", RecipeId = 5 },
+                        new Ingredient { Id = 38, Name = "Kale", Amount = "2", Unit = "cups", Notes = "chopped", RecipeId = 5 },
+                        new Ingredient { Id = 39, Name = "Red cabbage", Amount = "1", Unit = "cup", Notes = "shredded", RecipeId = 5 },
+                        new Ingredient { Id = 40, Name = "Tahini", Amount = "2", Unit = "tbsp", Notes = "raw", RecipeId = 5 },
+                        new Ingredient { Id = 41, Name = "Lemon juice", Amount = "2", Unit = "tbsp", Notes = "fresh", RecipeId = 5 },
+                        new Ingredient { Id = 42, Name = "Olive oil", Amount = "3", Unit = "tbsp", Notes = "divided", RecipeId = 5 },
+                        new Ingredient { Id = 43, Name = "Cumin", Amount = "1", Unit = "tsp", Notes = "ground", RecipeId = 5 },
+                        new Ingredient { Id = 44, Name = "Salt", Amount = "1", Unit = "tsp", Notes = "divided", RecipeId = 5 },
+                        new Ingredient { Id = 45, Name = "Black pepper", Amount = "1/2", Unit = "tsp", Notes = "freshly ground", RecipeId = 5 }
                     },
                     Instructions = new List<string>
                     {
@@ -241,9 +394,184 @@ namespace API.Controllers
                         "Assemble bowls with quinoa, roasted vegetables, kale, and cabbage.",
                         "Drizzle with tahini dressing and serve immediately."
                     }
+                },
+                new Recipe
+                {
+                    Id = 6,
+                    Title = "Lemon Herb Chicken Breast",
+                    Description = "Tender, juicy chicken breast marinated in fresh herbs and lemon, perfect for a healthy protein-packed dinner.",
+                    Category = "dinner",
+                    PrepTimeMinutes = 15,
+                    CookTimeMinutes = 20,
+                    Servings = 2,
+                    Calories = 280,
+                    Image = "🍗",
+                    Tags = new List<string> { "high-protein", "low-carb", "gluten-free" },
+                    Difficulty = "Easy",
+                    Ingredients = new List<Ingredient>
+                    {
+                        new Ingredient { Id = 46, Name = "Chicken Breast", Amount = "2", Unit = "6-oz", Notes = "boneless, skinless", RecipeId = 6 },
+                        new Ingredient { Id = 47, Name = "Lemon", Amount = "1", Unit = "medium", Notes = "juiced and zested", RecipeId = 6 },
+                        new Ingredient { Id = 48, Name = "Garlic", Amount = "3", Unit = "cloves", Notes = "minced", RecipeId = 6 },
+                        new Ingredient { Id = 49, Name = "Olive oil", Amount = "2", Unit = "tbsp", Notes = "extra virgin", RecipeId = 6 },
+                        new Ingredient { Id = 50, Name = "Thyme", Amount = "1", Unit = "tbsp", Notes = "fresh, chopped", RecipeId = 6 },
+                        new Ingredient { Id = 51, Name = "Rosemary", Amount = "1", Unit = "tsp", Notes = "fresh, chopped", RecipeId = 6 },
+                        new Ingredient { Id = 52, Name = "Salt", Amount = "1/2", Unit = "tsp", Notes = "to taste", RecipeId = 6 },
+                        new Ingredient { Id = 53, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground", RecipeId = 6 }
+                    },
+                    Instructions = new List<string>
+                    {
+                        "Preheat oven to 400°F (200°C).",
+                        "In a bowl, whisk together lemon juice, lemon zest, garlic, olive oil, thyme, rosemary, salt, and pepper.",
+                        "Place chicken breasts in a shallow dish and pour marinade over them.",
+                        "Let marinate for at least 15 minutes, turning once.",
+                        "Heat an oven-safe skillet over medium-high heat.",
+                        "Sear chicken breasts for 3-4 minutes per side until golden brown.",
+                        "Transfer skillet to oven and bake for 12-15 minutes until internal temperature reaches 165°F.",
+                        "Let rest for 5 minutes before slicing and serving."
+                    }
+                },
+                new Recipe
+                {
+                    Id = 7,
+                    Title = "Turkey & Brown Rice Bowl",
+                    Description = "A hearty and nutritious bowl featuring lean ground turkey, brown rice, and fresh vegetables for a complete meal.",
+                    Category = "lunch",
+                    PrepTimeMinutes = 10,
+                    CookTimeMinutes = 25,
+                    Servings = 2,
+                    Calories = 420,
+                    Image = "🍚",
+                    Tags = new List<string> { "high-protein", "whole-grain", "balanced" },
+                    Difficulty = "Easy",
+                    Ingredients = new List<Ingredient>
+                    {
+                        new Ingredient { Id = 54, Name = "Ground Turkey", Amount = "1", Unit = "lb", Notes = "lean, 93% lean", RecipeId = 7 },
+                        new Ingredient { Id = 55, Name = "Brown Rice", Amount = "1", Unit = "cup", Notes = "uncooked", RecipeId = 7 },
+                        new Ingredient { Id = 56, Name = "Bell Pepper", Amount = "1", Unit = "medium", Notes = "diced", RecipeId = 7 },
+                        new Ingredient { Id = 57, Name = "Onion", Amount = "1/2", Unit = "medium", Notes = "diced", RecipeId = 7 },
+                        new Ingredient { Id = 58, Name = "Garlic", Amount = "2", Unit = "cloves", Notes = "minced", RecipeId = 7 },
+                        new Ingredient { Id = 59, Name = "Olive oil", Amount = "1", Unit = "tbsp", Notes = "extra virgin", RecipeId = 7 },
+                        new Ingredient { Id = 60, Name = "Cumin", Amount = "1", Unit = "tsp", Notes = "ground", RecipeId = 7 },
+                        new Ingredient { Id = 61, Name = "Paprika", Amount = "1/2", Unit = "tsp", Notes = "smoked", RecipeId = 7 },
+                        new Ingredient { Id = 62, Name = "Salt", Amount = "1/2", Unit = "tsp", Notes = "to taste", RecipeId = 7 },
+                        new Ingredient { Id = 63, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground", RecipeId = 7 }
+                    },
+                    Instructions = new List<string>
+                    {
+                        "Cook brown rice according to package instructions.",
+                        "Heat olive oil in a large skillet over medium heat.",
+                        "Add diced onion and cook for 3-4 minutes until softened.",
+                        "Add garlic and cook for 1 minute until fragrant.",
+                        "Add ground turkey and cook, breaking it up with a spoon, until browned.",
+                        "Add bell pepper and cook for 3-4 minutes until tender.",
+                        "Season with cumin, paprika, salt, and pepper.",
+                        "Serve turkey mixture over brown rice.",
+                        "Garnish with fresh herbs if desired."
+                    }
+                },
+                new Recipe
+                {
+                    Id = 8,
+                    Title = "Creamy Mushroom Pasta",
+                    Description = "A rich and satisfying pasta dish featuring earthy mushrooms in a creamy sauce, perfect for a comforting dinner.",
+                    Category = "dinner",
+                    PrepTimeMinutes = 10,
+                    CookTimeMinutes = 20,
+                    Servings = 2,
+                    Calories = 450,
+                    Image = "🍝",
+                    Tags = new List<string> { "vegetarian", "comfort-food", "creamy" },
+                    Difficulty = "Medium",
+                    Ingredients = new List<Ingredient>
+                    {
+                        new Ingredient { Id = 64, Name = "Pasta", Amount = "8", Unit = "oz", Notes = "whole wheat", RecipeId = 8 },
+                        new Ingredient { Id = 65, Name = "Mushrooms", Amount = "8", Unit = "oz", Notes = "mixed varieties, sliced", RecipeId = 8 },
+                        new Ingredient { Id = 66, Name = "Garlic", Amount = "3", Unit = "cloves", Notes = "minced", RecipeId = 8 },
+                        new Ingredient { Id = 67, Name = "Onion", Amount = "1/2", Unit = "medium", Notes = "diced", RecipeId = 8 },
+                        new Ingredient { Id = 68, Name = "Cream", Amount = "1/2", Unit = "cup", Notes = "heavy cream", RecipeId = 8 },
+                        new Ingredient { Id = 69, Name = "Cheese", Amount = "1/2", Unit = "cup", Notes = "Parmesan, grated", RecipeId = 8 },
+                        new Ingredient { Id = 70, Name = "Olive oil", Amount = "2", Unit = "tbsp", Notes = "extra virgin", RecipeId = 8 },
+                        new Ingredient { Id = 71, Name = "Butter", Amount = "1", Unit = "tbsp", Notes = "unsalted", RecipeId = 8 },
+                        new Ingredient { Id = 72, Name = "Salt", Amount = "1/2", Unit = "tsp", Notes = "to taste", RecipeId = 8 },
+                        new Ingredient { Id = 73, Name = "Black pepper", Amount = "1/4", Unit = "tsp", Notes = "freshly ground", RecipeId = 8 }
+                    },
+                    Instructions = new List<string>
+                    {
+                        "Cook pasta according to package instructions until al dente.",
+                        "Reserve 1/2 cup pasta water before draining.",
+                        "Heat olive oil and butter in a large skillet over medium heat.",
+                        "Add mushrooms and cook for 5-6 minutes until golden brown.",
+                        "Add onion and cook for 3-4 minutes until softened.",
+                        "Add garlic and cook for 1 minute until fragrant.",
+                        "Pour in cream and bring to a gentle simmer.",
+                        "Add cooked pasta and toss to combine.",
+                        "Add Parmesan cheese and toss until melted.",
+                        "Add reserved pasta water if needed for desired consistency.",
+                        "Season with salt and pepper to taste.",
+                        "Serve immediately with extra Parmesan on top."
+                    }
+                },
+                new Recipe
+                {
+                    Id = 9,
+                    Title = "Overnight Oats Power Bowl",
+                    Description = "A nutritious and energizing breakfast bowl with overnight oats, fresh fruits, and protein-packed toppings.",
+                    Category = "breakfast",
+                    PrepTimeMinutes = 10,
+                    CookTimeMinutes = 0,
+                    Servings = 1,
+                    Calories = 320,
+                    Image = "🥣",
+                    Tags = new List<string> { "vegetarian", "make-ahead", "high-fiber" },
+                    Difficulty = "Easy",
+                    Ingredients = new List<Ingredient>
+                    {
+                        new Ingredient { Id = 74, Name = "Oats", Amount = "1/2", Unit = "cup", Notes = "old-fashioned", RecipeId = 9 },
+                        new Ingredient { Id = 75, Name = "Milk", Amount = "1/2", Unit = "cup", Notes = "almond or dairy", RecipeId = 9 },
+                        new Ingredient { Id = 76, Name = "Greek Yogurt", Amount = "1/4", Unit = "cup", Notes = "plain", RecipeId = 9 },
+                        new Ingredient { Id = 77, Name = "Honey", Amount = "1", Unit = "tbsp", Notes = "raw", RecipeId = 9 },
+                        new Ingredient { Id = 78, Name = "Nuts", Amount = "2", Unit = "tbsp", Notes = "almonds, chopped", RecipeId = 9 },
+                        new Ingredient { Id = 79, Name = "Banana", Amount = "1/2", Unit = "medium", Notes = "sliced", RecipeId = 9 },
+                        new Ingredient { Id = 80, Name = "Lime", Amount = "1/2", Unit = "medium", Notes = "juiced", RecipeId = 9 }
+                    },
+                    Instructions = new List<string>
+                    {
+                        "In a mason jar or bowl, combine oats, milk, and Greek yogurt.",
+                        "Add honey and lime juice, then stir well to combine.",
+                        "Cover and refrigerate overnight (at least 4 hours).",
+                        "In the morning, give the oats a good stir.",
+                        "Top with chopped nuts and sliced banana.",
+                        "Add a drizzle of honey if desired.",
+                        "Enjoy cold or at room temperature."
+                    }
                 }
             };
         }
+
+        private async Task SeedDatabaseAsync()
+        {
+            try
+            {
+                // Clear existing data
+                _context.Recipes.RemoveRange(_context.Recipes);
+                _context.Ingredients.RemoveRange(_context.Ingredients);
+                await _context.SaveChangesAsync();
+
+                // Add sample recipes
+                var recipes = GetSampleRecipes();
+                _context.Recipes.AddRange(recipes);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Database seeded successfully with {Count} recipes", recipes.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding database");
+                throw;
+            }
+        }
+
     }
 }
 

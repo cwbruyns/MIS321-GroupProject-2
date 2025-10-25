@@ -18,9 +18,9 @@
 - **Architecture**: RESTful API design with proper HTTP methods and status codes
 
 ## Database
-- **Type**: SQLite database
+- **Type**: MySQL database
 - **Data Access**: Write SQL queries directly, no ORM
-- **File Location**: Store SQLite database file in the `/api` folder
+- **File Location**: Store MySQL database file in the `/api` folder
 - **Connection String**: Store in `appsettings.json` for simplicity (e.g., "Data Source=./api/database.db")
 
 ## Project Structure Guidelines
@@ -52,5 +52,5 @@
 - Use consistent indentation (2 spaces for HTML/CSS/JS, 4 spaces for C#)
 - Comment complex logic and API endpoints
 - Use meaningful commit messages
-- Keep functions and methods focused and single-purpose
+- Keep functions and methods focused and single
 

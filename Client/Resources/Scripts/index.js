@@ -1,6 +1,89 @@
 // BetterBites - Health-First Recipe Application
 // Main JavaScript file for the BetterBites application
 
+// Authentication state management
+let currentUser = null;
+let authToken = localStorage.getItem('authToken');
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:5177/api';
+
+// Authentication functions
+async function login(email, password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      authToken = data.token;
+      currentUser = data.user;
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      return { success: true, user: currentUser };
+    } else {
+      const error = await response.json();
+      return { success: false, error: error.error || 'Login failed' };
+    }
+  } catch (error) {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+async function register(email, username, password, firstName, lastName) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, username, password, firstName, lastName })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      authToken = data.token;
+      currentUser = data.user;
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      return { success: true, user: currentUser };
+    } else {
+      const error = await response.json();
+      return { success: false, error: error.error || 'Registration failed' };
+    }
+  } catch (error) {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+function logout() {
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('currentUser');
+  renderHomePage();
+}
+
+function isLoggedIn() {
+  return currentUser !== null;
+}
+
+// Initialize user state from localStorage
+function initializeAuth() {
+  const storedUser = localStorage.getItem('currentUser');
+  if (storedUser && authToken) {
+    currentUser = JSON.parse(storedUser);
+  }
+}
+
+// Initialize authentication on page load
+initializeAuth();
+
 // Render the homepage
 function renderHomePage() {
   const app = document.getElementById('app');
@@ -9,10 +92,40 @@ function renderHomePage() {
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
       <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold fs-3" href="#">
+        <a class="navbar-brand fw-bold fs-3" href="#" id="homeBtn">
           <span class="text-success">🍽️</span> BetterBites
         </a>
-        <button class="btn btn-outline-success px-4" id="homeBtn">Home</button>
+        
+        <div class="d-flex align-items-center">
+          ${isLoggedIn() ? `
+            <div class="dropdown me-3">
+              <button class="btn btn-outline-success dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle me-1" viewBox="0 0 16 16">
+                  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                  <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                </svg>
+                ${currentUser.username}
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" id="profileBtn">My Profile</a></li>
+                <li><a class="dropdown-item" href="#" id="myRecipesBtn">My Recipes</a></li>
+                <li><a class="dropdown-item" href="#" id="favoritesBtn">My Favorites</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
+              </ul>
+            </div>
+            <button class="btn btn-success px-4" id="addRecipeBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-1" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
+              Add Recipe
+            </button>
+          ` : `
+            <button class="btn btn-outline-success me-2" id="loginBtn">Login</button>
+            <button class="btn btn-success" id="registerBtn">Sign Up</button>
+          `}
+        </div>
       </div>
     </nav>
 
@@ -117,6 +230,32 @@ function renderHomePage() {
       showAuthModal('healthGoals');
     }
   });
+
+  // Authentication event listeners
+  if (isLoggedIn()) {
+    // User is logged in - add user-specific event listeners
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('profileBtn').addEventListener('click', () => {
+      // TODO: Implement profile page
+      alert('Profile page coming soon!');
+    });
+    document.getElementById('myRecipesBtn').addEventListener('click', () => {
+      // TODO: Implement my recipes page
+      alert('My Recipes page coming soon!');
+    });
+    document.getElementById('favoritesBtn').addEventListener('click', () => {
+      // TODO: Implement favorites page
+      alert('Favorites page coming soon!');
+    });
+    document.getElementById('addRecipeBtn').addEventListener('click', () => {
+      // TODO: Implement add recipe page
+      alert('Add Recipe page coming soon!');
+    });
+  } else {
+    // User is not logged in - add auth event listeners
+    document.getElementById('loginBtn').addEventListener('click', renderLoginPage);
+    document.getElementById('registerBtn').addEventListener('click', renderRegisterPage);
+  }
 }
 
 // Render the Find Recipes page
@@ -512,8 +651,7 @@ async function generateRecipeCards(filter = 'all', searchQuery = '') {
   `).join('');
 }
 
-// API Configuration
-const API_BASE_URL = 'https://localhost:7000/api'; // Update this to match your API URL
+// API Configuration (moved to top of file)
 
 // Authentication state
 let currentUser = null;
@@ -3432,6 +3570,222 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHealthGoals();
 });
 
+// Authentication Pages
+function renderLoginPage() {
+  const app = document.getElementById('app');
+  
+  app.innerHTML = `
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold fs-3" href="#" id="homeBtn">
+          <span class="text-success">🍽️</span> BetterBites
+        </a>
+        <div class="d-flex align-items-center">
+          <button class="btn btn-outline-success me-2" id="registerBtn">Sign Up</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Login Form -->
+    <div class="container">
+      <div class="row min-vh-100 align-items-center justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-center mb-4">
+                <h2 class="fw-bold text-success">Welcome Back</h2>
+                <p class="text-muted">Sign in to your BetterBites account</p>
+              </div>
+              
+              <form id="loginForm">
+                <div class="mb-3">
+                  <label for="loginEmail" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="loginEmail" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="loginPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="loginPassword" required>
+                </div>
+                
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-success btn-lg" id="loginSubmitBtn">
+                    Sign In
+                  </button>
+                </div>
+                
+                <div class="text-center mt-3">
+                  <p class="text-muted">Don't have an account? 
+                    <a href="#" id="switchToRegister" class="text-success text-decoration-none">Sign up here</a>
+                  </p>
+                </div>
+              </form>
+              
+              <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add event listeners
+  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  document.getElementById('switchToRegister').addEventListener('click', renderRegisterPage);
+}
+
+function renderRegisterPage() {
+  const app = document.getElementById('app');
+  
+  app.innerHTML = `
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold fs-3" href="#" id="homeBtn">
+          <span class="text-success">🍽️</span> BetterBites
+        </a>
+        <div class="d-flex align-items-center">
+          <button class="btn btn-outline-success me-2" id="loginBtn">Login</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Register Form -->
+    <div class="container">
+      <div class="row min-vh-100 align-items-center justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-center mb-4">
+                <h2 class="fw-bold text-success">Join BetterBites</h2>
+                <p class="text-muted">Create your account to start your healthy journey</p>
+              </div>
+              
+              <form id="registerForm">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="registerFirstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="registerFirstName">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="registerLastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="registerLastName">
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="registerEmail" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="registerEmail" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="registerUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="registerUsername" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="registerPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="registerPassword" required minlength="6">
+                  <div class="form-text">Password must be at least 6 characters long.</div>
+                </div>
+                
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-success btn-lg" id="registerSubmitBtn">
+                    Create Account
+                  </button>
+                </div>
+                
+                <div class="text-center mt-3">
+                  <p class="text-muted">Already have an account? 
+                    <a href="#" id="switchToLogin" class="text-success text-decoration-none">Sign in here</a>
+                  </p>
+                </div>
+              </form>
+              
+              <div id="registerError" class="alert alert-danger mt-3" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add event listeners
+  document.getElementById('registerForm').addEventListener('submit', handleRegister);
+  document.getElementById('switchToLogin').addEventListener('click', renderLoginPage);
+}
+
+// Authentication handlers
+async function handleLogin(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errorDiv = document.getElementById('loginError');
+  const submitBtn = document.getElementById('loginSubmitBtn');
+  
+  // Show loading state
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing In...';
+  
+  try {
+    const result = await login(email, password);
+    
+    if (result.success) {
+      // Success - redirect to home page
+      renderHomePage();
+    } else {
+      // Show error
+      errorDiv.textContent = result.error;
+      errorDiv.style.display = 'block';
+    }
+  } catch (error) {
+    errorDiv.textContent = 'An unexpected error occurred';
+    errorDiv.style.display = 'block';
+  } finally {
+    // Reset button state
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Sign In';
+  }
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('registerEmail').value;
+  const username = document.getElementById('registerUsername').value;
+  const password = document.getElementById('registerPassword').value;
+  const firstName = document.getElementById('registerFirstName').value;
+  const lastName = document.getElementById('registerLastName').value;
+  const errorDiv = document.getElementById('registerError');
+  const submitBtn = document.getElementById('registerSubmitBtn');
+  
+  // Show loading state
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
+  
+  try {
+    const result = await register(email, username, password, firstName, lastName);
+    
+    if (result.success) {
+      // Success - redirect to home page
+      renderHomePage();
+    } else {
+      // Show error
+      errorDiv.textContent = result.error;
+      errorDiv.style.display = 'block';
+    }
+  } catch (error) {
+    errorDiv.textContent = 'An unexpected error occurred';
+    errorDiv.style.display = 'block';
+  } finally {
+    // Reset button state
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Create Account';
+  }
+}
+
 // Initialize shopping list on page load
 document.addEventListener('DOMContentLoaded', () => {
   loadShoppingList();
@@ -3443,3 +3797,4 @@ document.addEventListener('DOMContentLoaded', () => {
   loadUser();
   renderHomePage();
 });
+
