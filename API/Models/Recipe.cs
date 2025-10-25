@@ -15,6 +15,15 @@ namespace API.Models
         public List<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
         public List<string> Instructions { get; set; } = new List<string>();
         public string Difficulty { get; set; } = string.Empty;
+        
+        // User ownership
+        public int? UserId { get; set; } // Nullable for system recipes
+        public User? User { get; set; } // Navigation property
+        
+        // Recipe metadata
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsPublic { get; set; } = true; // All recipes are public by default
     }
 }
 
