@@ -13,6 +13,7 @@ namespace API.Data
         public DbSet<Ingredient> Ingredients { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<WellnessProfile> WellnessProfiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -101,6 +102,22 @@ namespace API.Data
                 .HasOne(uf => uf.Recipe)
                 .WithMany()
                 .HasForeignKey(uf => uf.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure WellnessProfile entity
+            modelBuilder.Entity<WellnessProfile>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.UserId).IsUnique();
+                entity.Property(e => e.Goals).HasMaxLength(500);
+                entity.Property(e => e.ActivityLevel).HasMaxLength(50);
+            });
+
+            // Configure relationship between User and WellnessProfile (one-to-one)
+            modelBuilder.Entity<WellnessProfile>()
+                .HasOne(wp => wp.User)
+                .WithOne(u => u.WellnessProfile)
+                .HasForeignKey<WellnessProfile>(wp => wp.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Data seeding is handled by DataSeeder service

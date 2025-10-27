@@ -37,5 +37,6 @@ namespace API.Models
         // Navigation properties
         public ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
         public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
+        public WellnessProfile? WellnessProfile { get; set; }
     }
 }
