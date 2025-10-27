@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\cwbru\\OneDrive\\Documents\\321\\groupproject2\\MIS321-GroupProject-2\\API\\API.csproj": {}
+    "C:\\Users\\tynas\\Documents\\MIS321\\GP\\GP#2\\MIS321-GroupProject-2\\API\\API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\cwbru\\OneDrive\\Documents\\321\\groupproject2\\MIS321-GroupProject-2\\API\\API.csproj": {
+    "C:\\Users\\tynas\\Documents\\MIS321\\GP\\GP#2\\MIS321-GroupProject-2\\API\\API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\cwbru\\OneDrive\\Documents\\321\\groupproject2\\MIS321-GroupProject-2\\API\\API.csproj",
+        "projectUniqueName": "C:\\Users\\tynas\\Documents\\MIS321\\GP\\GP#2\\MIS321-GroupProject-2\\API\\API.csproj",
         "projectName": "API",
-        "projectPath": "C:\\Users\\cwbru\\OneDrive\\Documents\\321\\groupproject2\\MIS321-GroupProject-2\\API\\API.csproj",
-        "packagesPath": "C:\\Users\\cwbru\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\cwbru\\OneDrive\\Documents\\321\\groupproject2\\MIS321-GroupProject-2\\API\\obj\\",
+        "projectPath": "C:\\Users\\tynas\\Documents\\MIS321\\GP\\GP#2\\MIS321-GroupProject-2\\API\\API.csproj",
+        "packagesPath": "C:\\Users\\tynas\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\tynas\\Documents\\MIS321\\GP\\GP#2\\MIS321-GroupProject-2\\API\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\cwbru\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\tynas\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -83,7 +83,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.404/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.405/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
