@@ -3,15 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BetterBites</title>
+  <title>BetterBites - Healthy Recipe App</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#28a745" id="themeColorMeta">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BetterBites">
+  <meta name="description" content="Your health-first recipe application for better eating">
+  
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="icons/icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="96x96" href="icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="384x384" href="icons/icon-384x384.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512x512.png">
+  
+  <!-- Bootstrap and CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="Resources/Styles/index.css">
+  
+  <!-- Accessibility: Load settings from localStorage on page load -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load accessibility settings
+      const settings = localStorage.getItem('accessibilitySettings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        document.documentElement.style.setProperty('--font-size-multiplier', parsed.fontSize || 1);
+        if (parsed.highContrast) {
+          document.body.classList.add('high-contrast');
+        }
+        if (parsed.reducedMotion) {
+          document.body.classList.add('reduced-motion');
+        }
+      }
+    });
+  </script>
 </head>
 <body>
   <div id="app"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="Resources/Scripts/index.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./Resources/Scripts/service-worker.js')
+          .then((registration) => {
+            console.log('Service Worker registered successfully', registration.scope);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New service worker available
+                  console.log('New service worker available');
+                  if (confirm('A new version of BetterBites is available. Reload to update?')) {
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch((error) => {
+            console.error('Service Worker registration failed', error);
+          });
+        
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          console.log('Message from service worker', event.data);
+        });
+      });
+      
+      // Listen for service worker updates
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+    
+    // PWA Install Prompt (only in secure contexts)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showInstallButton();
+    });
+    
+    // Show install button
+    function showInstallButton() {
+      const installBtn = document.createElement('button');
+      installBtn.className = 'btn btn-success btn-sm';
+      installBtn.innerHTML = '📱 Install BetterBites';
+      installBtn.style.position = 'fixed';
+      installBtn.style.bottom = '20px';
+      installBtn.style.right = '20px';
+      installBtn.style.zIndex = '9999';
+      installBtn.onclick = () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+          }
+          deferredPrompt = null;
+          installBtn.remove();
+        });
+      };
+      document.body.appendChild(installBtn);
+    }
+  </script>
 </body>
 </html>
