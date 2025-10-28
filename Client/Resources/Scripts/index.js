@@ -534,12 +534,6 @@ function renderHomePage() {
                   </svg>
                   Calendar Integration
                 </a></li>
-                <li><a class="dropdown-item" href="#" id="apiIntegrationBtn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plug me-2" viewBox="0 0 16 16">
-                    <path d="M6 0a.5.5 0 0 1 .5.5V3h3V.5a.5.5 0 0 1 1 0V3h1a.5.5 0 0 1 .5.5v3A3.5 3.5 0 0 1 8.5 10c-.379 0-.74-.052-1.08-.15l-1.95 1.95C5.64 13.583 6.01 14 6.5 14c.276 0 .5-.224.5-.5v-3A3.5 3.5 0 0 1 10.5 7h3a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5h3A3.5 3.5 0 0 1 7 3.5V.5A.5.5 0 0 1 7.5 0h-1.5Z"/>
-                  </svg>
-                  API Integrations
-                </a></li>
                 <li><a class="dropdown-item" href="#" id="accessibilityBtn">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-universal-access me-2" viewBox="0 0 16 16">
                     <path d="M9.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM6 13.5V6.5a.5.5 0 0 1 .832-.374l.5.5a1 1 0 0 0 .665.374l.767 0L9 7.9l.723 7.795.566-.572A.5.5 0 0 1 10 15h1.5a.5.5 0 0 1 .5.5V14A.5.5 0 0 1 12 14v-.5a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H13v.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5V16h-.5a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5H11v.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1H7.5a.5.5 0 0 1-.5-.5v-1H5.5a.5.5 0 0 1-.5.5H4v.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5V16H1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5H2v-.5a.5.5 0 0 1 .5-.5H4V13.5Z"/>
@@ -868,13 +862,6 @@ function renderHomePage() {
     if (calendarBtn) {
       calendarBtn.addEventListener('click', () => {
         renderCalendarIntegration();
-      });
-    }
-    // Add API integration button if it exists
-    const apiIntegrationBtn = document.getElementById('apiIntegrationBtn');
-    if (apiIntegrationBtn) {
-      apiIntegrationBtn.addEventListener('click', () => {
-        renderAPIIntegrationIdeas();
       });
     }
     // Add accessibility button if it exists
